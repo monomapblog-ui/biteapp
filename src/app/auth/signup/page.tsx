@@ -27,12 +27,11 @@ export default function SignupPage() {
       password,
       options: {
         data: { name, role },
-        emailRedirectTo: `${location.origin}/auth/callback`,
       },
     })
 
     if (error) {
-      setError(error.message)
+      setError(error.message || 'エラーが発生しました: ' + JSON.stringify(error))
       setLoading(false)
       return
     }
