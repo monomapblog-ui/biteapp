@@ -4,19 +4,33 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 
-const NAV = [
-  { href: '/', label: '案件', icon: '🔍' },
-  { href: '/applications', label: '応募', icon: '📋' },
-  { href: '/mypage', label: 'マイページ', icon: '👤' },
-]
+function navItems(role: string | null) {
+  if (role === 'employer') return [
+    { href: '/employer/dashboard', label: 'ダッシュボード', icon: '📋' },
+    { href: '/employer/post-job', label: '案件作成', icon: '➕' },
+    { href: '/mypage', label: 'マイページ', icon: '👤' },
+  ]
+  if (role === 'admin') return [
+    { href: '/admin/qualifications', label: '資格審査', icon: '🔍' },
+    { href: '/employer/dashboard', label: '案件管理', icon: '📋' },
+    { href: '/mypage', label: 'マイページ', icon: '👤' },
+  ]
+  return [
+    { href: '/', label: '案件', icon: '🔍' },
+    { href: '/applications', label: '応募', icon: '📋' },
+    { href: '/mypage', label: 'マイページ', icon: '👤' },
+  ]
+}
 
-export function BottomNav() {
+interface Props { role?: string | null }
+
+export function BottomNav({ role = null }: Props) {
   const pathname = usePathname()
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-100 safe-area-bottom">
       <div className="max-w-screen-md mx-auto flex">
-        {NAV.map((item) => (
+        {navItems(role).map((item) => (
           <Link
             key={item.href}
             href={item.href}

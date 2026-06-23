@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import './globals.css'
-import { Header } from '@/components/layout/Header'
-import { BottomNav } from '@/components/layout/BottomNav'
+import { NavWrapper } from '@/components/layout/NavWrapper'
+import { ToastProvider } from '@/components/toast/ToastProvider'
 
 export const metadata: Metadata = {
   title: 'プロイ | 有資格者スポットバイト',
@@ -12,11 +12,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="ja">
       <body>
-        <Header />
-        <main className="max-w-screen-md mx-auto px-4 pt-4">
-          {children}
-        </main>
-        <BottomNav />
+        <ToastProvider>
+          <NavWrapper />
+          <main className="max-w-screen-md mx-auto px-4 pt-4">
+            {children}
+          </main>
+        </ToastProvider>
       </body>
     </html>
   )
