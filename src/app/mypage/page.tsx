@@ -118,6 +118,7 @@ export default async function MyPage() {
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm divide-y divide-gray-50">
         {[
           { label: '応募履歴', href: '/applications', icon: '📋' },
+          { label: '受け取った評価', href: '/mypage/reviews', icon: '⭐' },
           { label: 'プロフィール編集', href: '/mypage/edit', icon: '✏️' },
         ].map(item => (
           <Link key={item.href} href={item.href} className="flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors">

@@ -25,6 +25,7 @@ interface JobRow {
   end_time: string
   slots: number
   remaining_slots: number
+  employer_id: string
   job_required_qualifications: QualRow[]
   job_tags: Array<{ tag: string }>
   profiles: { name: string; avatar_url: string | null } | null
@@ -71,10 +72,9 @@ export function JobDetailClient({ job, approvedQualIds, userId, existingApplicat
     }
 
     // notify employer
-    const employerId = (job.profiles as unknown as { id?: string } | null)?.id
-    if (employerId) {
+    if (job.employer_id) {
       await supabase.from('notifications').insert({
-        user_id: employerId,
+        user_id: job.employer_id,
         type: 'new_application',
         title: '新しい応募が届きました',
         body: `「${job.title}」に新しい応募がありました。`,
@@ -82,6 +82,7 @@ export function JobDetailClient({ job, approvedQualIds, userId, existingApplicat
         related_application_id: (appData as { id: string } | null)?.id ?? null,
       } as never)
     }
+
 
     setLoading(false)
     setApplied(true)
