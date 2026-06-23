@@ -16,7 +16,7 @@ export default async function MyPage() {
     .eq('id', user.id)
     .single()
 
-  const profile = profileRaw as { id: string; name: string; email?: string; role: string } | null
+  const profile = profileRaw as { id: string; name: string; email?: string; role: string; phone: string | null; avatar_url: string | null } | null
 
   type UserQualRow = {
     id: string; qualification_id: string; status: 'pending' | 'approved' | 'rejected'; issued_at: string; expires_at: string | null
@@ -42,11 +42,49 @@ export default async function MyPage() {
 
   return (
     <div className="space-y-4 pb-4">
+      {/* プロフィール充実度プロンプト */}
+      {profile?.role === 'worker' && (() => {
+        const steps = [
+          { done: !!profile.avatar_url, label: 'プロフィール写真', href: '/mypage/edit' },
+          { done: !!profile.phone, label: '電話番号', href: '/mypage/edit' },
+          { done: approved.length > 0, label: '資格を登録・承認', href: '/mypage/qualifications' },
+        ]
+        const completedCount = steps.filter(s => s.done).length
+        const pct = Math.round((completedCount / steps.length) * 100)
+        if (pct === 100) return null
+        const nextStep = steps.find(s => !s.done)!
+        return (
+          <Link href={nextStep.href}>
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-4">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm font-semibold text-blue-800">プロフィールを完成させよう</p>
+                <span className="text-sm font-bold text-blue-600">{pct}%</span>
+              </div>
+              <div className="w-full bg-blue-100 rounded-full h-2 mb-3">
+                <div className="bg-blue-600 h-2 rounded-full transition-all" style={{ width: `${pct}%` }} />
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {steps.map(s => (
+                  <span key={s.label} className={`text-xs px-2 py-0.5 rounded-full ${s.done ? 'bg-blue-600 text-white' : 'bg-white text-blue-600 border border-blue-300'}`}>
+                    {s.done ? '✓ ' : ''}{s.label}
+                  </span>
+                ))}
+              </div>
+              <p className="text-xs text-blue-600 mt-2">次のステップ: {nextStep.label} を追加 →</p>
+            </div>
+          </Link>
+        )
+      })()}
+
       {/* プロフィール */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
         <div className="flex items-center gap-4">
-          <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center text-2xl font-bold text-blue-600">
-            {profile?.name?.charAt(0) ?? '?'}
+          <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center text-2xl font-bold text-blue-600 overflow-hidden flex-shrink-0">
+            {profile?.avatar_url
+              // eslint-disable-next-line @next/next/no-img-element
+              ? <img src={profile.avatar_url} alt="avatar" className="w-full h-full object-cover" />
+              : profile?.name?.charAt(0) ?? '?'
+            }
           </div>
           <div className="flex-1">
             <div className="flex items-center gap-2 flex-wrap">

@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { createClient } from '@/lib/supabase/client'
+import { useToast } from '@/components/toast/ToastProvider'
 import { formatDate, formatCurrency, calcWorkHours } from '@/lib/utils'
 
 interface QualRow {
@@ -45,6 +46,7 @@ export function JobDetailClient({ job, approvedQualIds, userId, existingApplicat
   const [applied, setApplied] = useState(!!existingApplication)
   const router = useRouter()
   const supabase = createClient()
+  const toast = useToast()
 
   const mandatory = job.job_required_qualifications.filter(q => q.is_mandatory && q.qualifications)
   const eligible = mandatory.every(q => approvedQualIds.includes(q.qualification_id))
@@ -67,7 +69,7 @@ export function JobDetailClient({ job, approvedQualIds, userId, existingApplicat
 
     if (error) {
       setLoading(false)
-      alert('応募に失敗しました。資格の承認状況をご確認ください。')
+      toast.error('応募に失敗しました。資格の承認状況をご確認ください。')
       return
     }
 
@@ -99,7 +101,9 @@ export function JobDetailClient({ job, approvedQualIds, userId, existingApplicat
 
       {/* ヘッダー */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-        <p className="text-sm text-gray-500 mb-1">{job.profiles?.name}</p>
+        <Link href={`/employers/${job.employer_id}`} className="text-sm text-blue-600 hover:underline mb-1 inline-block">
+          🏢 {job.profiles?.name}
+        </Link>
         <h1 className="text-xl font-bold text-gray-900 mb-3">{job.title}</h1>
 
         <div className="grid grid-cols-3 gap-3 mb-4">

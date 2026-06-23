@@ -2,10 +2,12 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { createClient } from '@/lib/supabase/client'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { formatDate, formatCurrency } from '@/lib/utils'
 import { ReviewModal } from '@/components/reviews/ReviewModal'
+import { useToast } from '@/components/toast/ToastProvider'
 
 const STATUS_CONFIG = {
   applied:   { variant: 'warning'  as const, label: '⏳ 審査中' },
@@ -28,10 +30,26 @@ interface Props { items: Item[]; workerId: string }
 export function ApplicationsClient({ items: initial, workerId }: Props) {
   const [items, setItems] = useState(initial)
   const [reviewTarget, setReviewTarget] = useState<Item | null>(null)
+  const [cancelling, setCancelling] = useState<string | null>(null)
+  const supabase = createClient()
+  const toast = useToast()
 
   function markReviewed(appId: string) {
     setItems(prev => prev.map(i => i.id === appId ? { ...i, alreadyReviewed: true } : i))
     setReviewTarget(null)
+  }
+
+  async function handleCancel(appId: string) {
+    if (!confirm('応募をキャンセルしますか？')) return
+    setCancelling(appId)
+    const { error } = await supabase.from('applications').update({ status: 'cancelled' } as never).eq('id', appId)
+    if (error) {
+      toast.error('キャンセルに失敗しました')
+    } else {
+      setItems(prev => prev.map(i => i.id === appId ? { ...i, status: 'cancelled' } : i))
+      toast.info('応募をキャンセルしました')
+    }
+    setCancelling(null)
   }
 
   return (
@@ -73,6 +91,16 @@ export function ApplicationsClient({ items: initial, workerId }: Props) {
                     </div>
                   )}
                 </Link>
+
+                {app.status === 'applied' && (
+                  <Button
+                    variant="ghost" size="sm" className="w-full mt-3 text-gray-400 hover:text-red-500"
+                    onClick={() => handleCancel(app.id)}
+                    disabled={cancelling === app.id}
+                  >
+                    {cancelling === app.id ? 'キャンセル中...' : '応募をキャンセル'}
+                  </Button>
+                )}
 
                 {app.status === 'accepted' && (
                   <Link href={`/messages/${app.employerId}`}>

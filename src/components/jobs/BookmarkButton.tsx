@@ -8,9 +8,10 @@ interface Props {
   jobId: string
   initialBookmarked: boolean
   size?: 'sm' | 'md'
+  onToggle?: (bookmarked: boolean) => void
 }
 
-export function BookmarkButton({ jobId, initialBookmarked, size = 'md' }: Props) {
+export function BookmarkButton({ jobId, initialBookmarked, size = 'md', onToggle }: Props) {
   const [bookmarked, setBookmarked] = useState(initialBookmarked)
   const [loading, setLoading] = useState(false)
   const supabase = createClient()
@@ -24,12 +25,14 @@ export function BookmarkButton({ jobId, initialBookmarked, size = 'md' }: Props)
     if (bookmarked) {
       await supabase.from('job_bookmarks').delete().eq('job_id', jobId)
       setBookmarked(false)
+      onToggle?.(false)
       toast.info('ブックマークを解除しました')
     } else {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { toast.error('ログインが必要です'); setLoading(false); return }
       await supabase.from('job_bookmarks').insert({ user_id: user.id, job_id: jobId } as never)
       setBookmarked(true)
+      onToggle?.(true)
       toast.success('ブックマークしました')
     }
     setLoading(false)
