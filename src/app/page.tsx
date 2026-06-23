@@ -3,10 +3,8 @@ import { JobListClient } from '@/components/jobs/JobListClient'
 
 export default async function HomePage() {
   const supabase = await createClient()
-
   const { data: { user } } = await supabase.auth.getUser()
 
-  // 案件一覧（必須資格・タグ込み）
   const { data: jobs } = await supabase
     .from('jobs_with_remaining')
     .select(`
@@ -22,23 +20,20 @@ export default async function HomePage() {
     .eq('status', 'open')
     .order('created_at', { ascending: false })
 
-  // ログイン済みの場合：承認済み資格を取得
   let approvedQualIds: string[] = []
   let pendingCount = 0
+  let bookmarkedJobIds: string[] = []
 
   if (user) {
-    const { data: userQualsRaw } = await supabase
-      .from('user_qualifications')
-      .select('qualification_id, status')
-      .eq('user_id', user.id)
+    const [{ data: userQualsRaw }, { data: bookmarksRaw }] = await Promise.all([
+      supabase.from('user_qualifications').select('qualification_id, status').eq('user_id', user.id),
+      supabase.from('job_bookmarks').select('job_id').eq('user_id', user.id),
+    ])
 
     const userQuals = (userQualsRaw ?? []) as Array<{ qualification_id: string; status: string }>
-
-    approvedQualIds = userQuals
-      .filter(q => q.status === 'approved')
-      .map(q => q.qualification_id)
-
+    approvedQualIds = userQuals.filter(q => q.status === 'approved').map(q => q.qualification_id)
     pendingCount = userQuals.filter(q => q.status === 'pending').length
+    bookmarkedJobIds = ((bookmarksRaw ?? []) as Array<{ job_id: string }>).map(b => b.job_id)
   }
 
   return (
@@ -47,6 +42,7 @@ export default async function HomePage() {
       approvedQualIds={approvedQualIds}
       pendingCount={pendingCount}
       isLoggedIn={!!user}
+      bookmarkedJobIds={bookmarkedJobIds}
     />
   )
 }

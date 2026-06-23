@@ -27,9 +27,14 @@ export function EmployerDashboardClient({ jobs, employerName }: Props) {
           <h1 className="text-xl font-bold text-gray-900">ダッシュボード</h1>
           {employerName && <p className="text-sm text-gray-500 mt-0.5">{employerName}</p>}
         </div>
-        <Link href="/employer/post-job">
-          <Button size="sm">＋ 案件を作成</Button>
-        </Link>
+        <div className="flex gap-2">
+          <Link href="/employer/stats">
+            <Button variant="secondary" size="sm">📊</Button>
+          </Link>
+          <Link href="/employer/post-job">
+            <Button size="sm">＋ 案件を作成</Button>
+          </Link>
+        </div>
       </div>
 
       {jobs.length === 0 ? (

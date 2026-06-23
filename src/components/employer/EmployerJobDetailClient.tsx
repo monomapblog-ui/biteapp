@@ -157,9 +157,11 @@ export function EmployerJobDetailClient({ job: initialJob, applications: initial
             <div key={app.id} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-semibold text-gray-900 text-sm">{app.workerName}</p>
+                  <Link href={`/workers/${app.worker_id}`} className="font-semibold text-gray-900 text-sm hover:text-blue-600 hover:underline">
+                    {app.workerName}
+                  </Link>
                   {app.workerPhone && (
-                    <a href={`tel:${app.workerPhone}`} className="text-xs text-blue-600">{app.workerPhone}</a>
+                    <a href={`tel:${app.workerPhone}`} className="block text-xs text-blue-600">{app.workerPhone}</a>
                   )}
                   <p className="text-xs text-gray-400 mt-0.5">
                     {new Date(app.created_at).toLocaleDateString('ja-JP')} 応募

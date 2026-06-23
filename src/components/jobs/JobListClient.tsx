@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/Badge'
+import { BookmarkButton } from '@/components/jobs/BookmarkButton'
 import { formatDate, formatCurrency } from '@/lib/utils'
 
 const QUAL_FILTER = [
@@ -18,20 +19,11 @@ const QUAL_FILTER = [
 const PREFECTURES = ['すべて', '東京都', '神奈川県', '千葉県', '埼玉県']
 
 interface JobRow {
-  id: string
-  title: string
-  description: string
-  location: string
-  prefecture: string
-  hourly_rate: number
-  work_date: string
-  start_time: string
-  end_time: string
-  slots: number
-  remaining_slots: number
+  id: string; title: string; description: string; location: string; prefecture: string
+  hourly_rate: number; work_date: string; start_time: string; end_time: string
+  slots: number; remaining_slots: number
   job_required_qualifications: Array<{
-    qualification_id: string
-    is_mandatory: boolean
+    qualification_id: string; is_mandatory: boolean
     qualifications: { id: string; name: string; icon: string } | null
   }>
   job_tags: Array<{ tag: string }>
@@ -39,31 +31,26 @@ interface JobRow {
 }
 
 interface Props {
-  jobs: JobRow[]
-  approvedQualIds: string[]
-  pendingCount: number
-  isLoggedIn: boolean
+  jobs: JobRow[]; approvedQualIds: string[]; pendingCount: number
+  isLoggedIn: boolean; bookmarkedJobIds: string[]
 }
 
 function isEligible(job: JobRow, approvedIds: string[]): boolean {
-  const mandatory = job.job_required_qualifications.filter(q => q.is_mandatory)
-  return mandatory.every(q => approvedIds.includes(q.qualification_id))
+  return job.job_required_qualifications.filter(q => q.is_mandatory).every(q => approvedIds.includes(q.qualification_id))
 }
 
-export function JobListClient({ jobs, approvedQualIds, pendingCount, isLoggedIn }: Props) {
+export function JobListClient({ jobs, approvedQualIds, pendingCount, isLoggedIn, bookmarkedJobIds }: Props) {
   const [qualFilter, setQualFilter] = useState('all')
   const [prefFilter, setPrefFilter] = useState('すべて')
 
   const filtered = jobs.filter(job => {
     const prefOk = prefFilter === 'すべて' || job.prefecture === prefFilter
-    const qualOk = qualFilter === 'all' ||
-      job.job_required_qualifications.some(q => q.qualification_id === qualFilter)
+    const qualOk = qualFilter === 'all' || job.job_required_qualifications.some(q => q.qualification_id === qualFilter)
     return prefOk && qualOk
   })
 
   return (
     <div className="space-y-4 pb-4">
-      {/* 審査中バナー */}
       {pendingCount > 0 && (
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-center gap-3">
           <span className="text-2xl">⏳</span>
@@ -74,7 +61,6 @@ export function JobListClient({ jobs, approvedQualIds, pendingCount, isLoggedIn 
         </div>
       )}
 
-      {/* Hero */}
       <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl p-5 text-white">
         <h1 className="text-xl font-bold mb-1">今日のスポット案件</h1>
         <p className="text-blue-100 text-sm mb-3">資格を活かしてスキマ時間に稼ごう</p>
@@ -92,33 +78,23 @@ export function JobListClient({ jobs, approvedQualIds, pendingCount, isLoggedIn 
         </div>
       </div>
 
-      {/* 資格フィルター */}
       <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4">
         {QUAL_FILTER.map(f => (
-          <button
-            key={f.id}
-            onClick={() => setQualFilter(f.id)}
+          <button key={f.id} onClick={() => setQualFilter(f.id)}
             className={`shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-              qualFilter === f.id
-                ? 'bg-blue-600 text-white border-blue-600'
-                : 'bg-white text-gray-600 border-gray-200'
-            }`}
-          >
+              qualFilter === f.id ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-200'
+            }`}>
             <span>{f.icon}</span><span>{f.label}</span>
           </button>
         ))}
       </div>
 
-      {/* 都道府県フィルター */}
       <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4">
         {PREFECTURES.map(pref => (
-          <button
-            key={pref}
-            onClick={() => setPrefFilter(pref)}
+          <button key={pref} onClick={() => setPrefFilter(pref)}
             className={`shrink-0 px-3 py-1 rounded-full text-xs font-medium transition-colors ${
               prefFilter === pref ? 'bg-gray-900 text-white' : 'bg-white text-gray-500 border border-gray-200'
-            }`}
-          >
+            }`}>
             {pref}
           </button>
         ))}
@@ -126,15 +102,20 @@ export function JobListClient({ jobs, approvedQualIds, pendingCount, isLoggedIn 
 
       <p className="text-sm text-gray-500">{filtered.length}件の案件</p>
 
-      {/* 案件リスト */}
       <div className="space-y-3">
         {filtered.map(job => {
           const eligible = isLoggedIn && isEligible(job, approvedQualIds)
           const mandatory = job.job_required_qualifications.filter(q => q.is_mandatory && q.qualifications)
+          const isBookmarked = bookmarkedJobIds.includes(job.id)
 
           return (
-            <Link key={job.id} href={`/jobs/${job.id}`}>
-              <div className="bg-white rounded-xl border border-gray-100 shadow-sm hover:border-blue-200 hover:shadow-md transition-all p-4">
+            <div key={job.id} className="bg-white rounded-xl border border-gray-100 shadow-sm hover:border-blue-200 hover:shadow-md transition-all p-4 relative">
+              {isLoggedIn && (
+                <div className="absolute top-3 right-3">
+                  <BookmarkButton jobId={job.id} initialBookmarked={isBookmarked} size="sm" />
+                </div>
+              )}
+              <Link href={`/jobs/${job.id}`} className="block pr-10">
                 <div className="flex items-start justify-between gap-2 mb-2">
                   <div className="flex-1 min-w-0">
                     <p className="text-xs text-gray-500 mb-0.5">{job.profiles?.name}</p>
@@ -176,8 +157,8 @@ export function JobListClient({ jobs, approvedQualIds, pendingCount, isLoggedIn 
                     }
                   </div>
                 </div>
-              </div>
-            </Link>
+              </Link>
+            </div>
           )
         })}
         {filtered.length === 0 && (
