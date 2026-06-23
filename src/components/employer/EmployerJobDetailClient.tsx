@@ -193,6 +193,12 @@ export function EmployerJobDetailClient({ job: initialJob, applications: initial
                 </div>
               )}
 
+              {app.status === 'accepted' && (
+                <Link href={`/messages/${app.worker_id}`}>
+                  <Button variant="secondary" size="sm" className="w-full">💬 メッセージ</Button>
+                </Link>
+              )}
+
               {app.status === 'accepted' && isJobPast && !reviewedIds.has(app.id) && (
                 <Button
                   variant="secondary" size="sm" className="w-full"

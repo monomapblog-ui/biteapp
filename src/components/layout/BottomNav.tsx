@@ -8,19 +8,19 @@ function navItems(role: string | null) {
   if (role === 'employer') return [
     { href: '/employer/dashboard', label: 'ダッシュボード', icon: '📋' },
     { href: '/employer/post-job', label: '案件作成', icon: '➕' },
-    { href: '/notifications', label: '通知', icon: '🔔' },
+    { href: '/messages', label: 'メッセージ', icon: '💬' },
     { href: '/mypage', label: 'マイページ', icon: '👤' },
   ]
   if (role === 'admin') return [
     { href: '/admin/qualifications', label: '資格審査', icon: '🔍' },
     { href: '/employer/dashboard', label: '案件管理', icon: '📋' },
-    { href: '/notifications', label: '通知', icon: '🔔' },
+    { href: '/messages', label: 'メッセージ', icon: '💬' },
     { href: '/mypage', label: 'マイページ', icon: '👤' },
   ]
   return [
     { href: '/', label: '案件', icon: '🔍' },
     { href: '/applications', label: '応募', icon: '📋' },
-    { href: '/notifications', label: '通知', icon: '🔔' },
+    { href: '/messages', label: 'メッセージ', icon: '💬' },
     { href: '/mypage', label: 'マイページ', icon: '👤' },
   ]
 }

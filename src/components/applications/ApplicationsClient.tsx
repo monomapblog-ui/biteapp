@@ -74,6 +74,12 @@ export function ApplicationsClient({ items: initial, workerId }: Props) {
                   )}
                 </Link>
 
+                {app.status === 'accepted' && (
+                  <Link href={`/messages/${app.employerId}`}>
+                    <Button variant="secondary" size="sm" className="w-full mt-3">💬 企業にメッセージ</Button>
+                  </Link>
+                )}
+
                 {canReview && (
                   <Button
                     variant="secondary" size="sm" className="w-full mt-3"
