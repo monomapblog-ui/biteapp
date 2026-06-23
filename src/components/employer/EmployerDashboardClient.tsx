@@ -15,6 +15,7 @@ interface Props { jobs: JobWithCounts[]; employerName: string }
 function statusBadge(status: string) {
   if (status === 'open') return <Badge variant="success">募集中</Badge>
   if (status === 'closed') return <Badge variant="default">締切</Badge>
+  if (status === 'done') return <Badge variant="default">完了</Badge>
   if (status === 'cancelled') return <Badge variant="danger">キャンセル</Badge>
   return <Badge variant="default">{status}</Badge>
 }

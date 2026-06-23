@@ -1,8 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import { Badge } from '@/components/ui/Badge'
-import { formatDate, formatCurrency } from '@/lib/utils'
-import Link from 'next/link'
 import { ApplicationsClient } from '@/components/applications/ApplicationsClient'
 
 export default async function ApplicationsPage() {

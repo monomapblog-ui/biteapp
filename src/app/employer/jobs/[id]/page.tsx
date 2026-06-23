@@ -29,12 +29,12 @@ export default async function EmployerJobDetailPage({ params }: { params: Promis
 
   const { data: appsRaw } = await supabase
     .from('applications')
-    .select('id, worker_id, status, message, created_at')
+    .select('id, worker_id, status, message, applied_at')
     .eq('job_id', id)
-    .order('created_at', { ascending: true })
+    .order('applied_at', { ascending: true })
 
   const apps = (appsRaw ?? []) as Array<{
-    id: string; worker_id: string; status: string; message: string | null; created_at: string
+    id: string; worker_id: string; status: string; message: string | null; applied_at: string
   }>
 
   const workerIds = [...new Set(apps.map(a => a.worker_id))]
@@ -47,7 +47,11 @@ export default async function EmployerJobDetailPage({ params }: { params: Promis
   )
 
   const appsWithWorkers = apps.map(a => ({
-    ...a,
+    id: a.id,
+    worker_id: a.worker_id,
+    status: a.status,
+    message: a.message,
+    applied_at: a.applied_at,
     workerName: workerMap[a.worker_id]?.name ?? '不明',
     workerPhone: workerMap[a.worker_id]?.phone ?? null,
   }))

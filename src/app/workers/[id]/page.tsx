@@ -87,7 +87,6 @@ export default async function WorkerProfilePage({ params }: { params: Promise<{ 
       avgRating={avgRating}
       completedCount={completedCount ?? 0}
       employerOpenJobs={employerOpenJobs}
-      viewerId={user.id}
       workerId={id}
     />
   )

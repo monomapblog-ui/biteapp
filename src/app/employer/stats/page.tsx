@@ -47,6 +47,7 @@ export default async function EmployerStatsPage() {
     if (a.status === 'accepted') monthlyMap[month].hired++
   }
   const months = Object.entries(monthlyMap).sort((a, b) => b[0].localeCompare(a[0])).slice(0, 6)
+  const maxApps = Math.max(...months.map(([, v]) => v.apps), 1)
 
   // top jobs by application count
   const appCountByJob: Record<string, number> = {}
@@ -101,10 +102,8 @@ export default async function EmployerStatsPage() {
                   <span>{month.replace('-', '年')}月</span>
                   <span>投稿 {data.posted}件 · 応募 {data.apps}件 · 採用 {data.hired}名</span>
                 </div>
-                <div className="flex gap-1 h-2">
-                  <div className="bg-blue-200 rounded-full flex-1 overflow-hidden">
-                    <div className="h-full bg-blue-500 rounded-full" style={{ width: data.apps > 0 ? '100%' : '0' }} />
-                  </div>
+                <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-blue-500 rounded-full" style={{ width: `${(data.apps / maxApps) * 100}%` }} />
                 </div>
               </div>
             ))}

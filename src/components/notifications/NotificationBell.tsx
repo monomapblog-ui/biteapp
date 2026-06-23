@@ -7,13 +7,13 @@ import { createClient } from '@/lib/supabase/client'
 export function NotificationBell() {
   const [unread, setUnread] = useState(0)
   const router = useRouter()
-  const supabase = createClient()
 
   useEffect(() => {
+    const client = createClient()
     async function fetchUnread() {
-      const { data: { user } } = await supabase.auth.getUser()
+      const { data: { user } } = await client.auth.getUser()
       if (!user) return
-      const { count } = await supabase
+      const { count } = await client
         .from('notifications')
         .select('*', { count: 'exact', head: true })
         .eq('user_id', user.id)
@@ -21,7 +21,8 @@ export function NotificationBell() {
       setUnread(count ?? 0)
     }
     fetchUnread()
-  }, [supabase])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   return (
     <button

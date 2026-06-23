@@ -10,7 +10,7 @@ import { ReviewModal } from '@/components/reviews/ReviewModal'
 
 interface Application {
   id: string; worker_id: string; status: string; message: string | null
-  created_at: string; workerName: string; workerPhone: string | null
+  applied_at: string; workerName: string; workerPhone: string | null
 }
 
 interface Job {
@@ -22,10 +22,11 @@ interface Job {
 interface Props { job: Job; applications: Application[] }
 
 function appBadge(status: string) {
-  if (status === 'pending') return <Badge variant="warning">審査待ち</Badge>
+  if (status === 'applied') return <Badge variant="warning">審査待ち</Badge>
   if (status === 'accepted') return <Badge variant="success">採用</Badge>
   if (status === 'rejected') return <Badge variant="danger">不採用</Badge>
   if (status === 'cancelled') return <Badge variant="default">キャンセル</Badge>
+  if (status === 'completed') return <Badge variant="default">完了</Badge>
   return <Badge variant="default">{status}</Badge>
 }
 
@@ -55,7 +56,6 @@ export function EmployerJobDetailClient({ job: initialJob, applications: initial
 
     setApps(prev => prev.map(a => a.id === appId ? { ...a, status } : a))
 
-    // notify worker
     await supabase.from('notifications').insert({
       user_id: workerId,
       type: status === 'accepted' ? 'application_accepted' : 'application_rejected',
@@ -70,20 +70,21 @@ export function EmployerJobDetailClient({ job: initialJob, applications: initial
     setLoading(null)
   }
 
-  async function updateJobStatus(status: 'closed' | 'completed') {
-    setLoading('job-' + status)
-    const { error } = await supabase.from('jobs').update({ status } as never).eq('id', job.id)
+  // DBのjob_status enumは 'open' | 'closed' | 'done'
+  async function updateJobStatus(newStatus: 'closed' | 'done') {
+    setLoading('job-' + newStatus)
+    const { error } = await supabase.from('jobs').update({ status: newStatus } as never).eq('id', job.id)
     if (error) {
       toast.error('更新に失敗しました')
     } else {
-      setJob(prev => ({ ...prev, status }))
-      toast.success(status === 'closed' ? '募集を締め切りました' : '案件を完了にしました')
+      setJob(prev => ({ ...prev, status: newStatus }))
+      toast.success(newStatus === 'closed' ? '募集を締め切りました' : '案件を完了にしました')
     }
     setLoading(null)
   }
 
   const acceptedCount = apps.filter(a => a.status === 'accepted').length
-  const pendingCount = apps.filter(a => a.status === 'pending').length
+  const pendingCount = apps.filter(a => a.status === 'applied').length
 
   return (
     <div className="space-y-5 pb-8">
@@ -97,7 +98,7 @@ export function EmployerJobDetailClient({ job: initialJob, applications: initial
           <h1 className="font-bold text-gray-900 text-lg leading-snug flex-1">{job.title}</h1>
           {job.status === 'open' && <Badge variant="success">募集中</Badge>}
           {job.status === 'closed' && <Badge variant="default">締切</Badge>}
-          {job.status === 'completed' && <Badge variant="default">完了</Badge>}
+          {job.status === 'done' && <Badge variant="default">完了</Badge>}
         </div>
         <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-500">
           <span>📅 {job.work_date}</span>
@@ -111,7 +112,6 @@ export function EmployerJobDetailClient({ job: initialJob, applications: initial
           {pendingCount > 0 && <Badge variant="warning">{pendingCount}件 未対応</Badge>}
         </div>
 
-        {/* Job lifecycle buttons */}
         {job.status === 'open' && (
           <div className="flex gap-2 pt-1">
             <Button
@@ -124,7 +124,7 @@ export function EmployerJobDetailClient({ job: initialJob, applications: initial
             {isJobPast && (
               <Button
                 size="sm" className="flex-1"
-                onClick={() => updateJobStatus('completed')}
+                onClick={() => updateJobStatus('done')}
                 disabled={!!loading}
               >
                 完了にする
@@ -135,7 +135,7 @@ export function EmployerJobDetailClient({ job: initialJob, applications: initial
         {job.status === 'closed' && isJobPast && (
           <Button
             size="sm" className="w-full"
-            onClick={() => updateJobStatus('completed')}
+            onClick={() => updateJobStatus('done')}
             disabled={!!loading}
           >
             完了にする
@@ -164,7 +164,7 @@ export function EmployerJobDetailClient({ job: initialJob, applications: initial
                     <a href={`tel:${app.workerPhone}`} className="block text-xs text-blue-600">{app.workerPhone}</a>
                   )}
                   <p className="text-xs text-gray-400 mt-0.5">
-                    {new Date(app.created_at).toLocaleDateString('ja-JP')} 応募
+                    {new Date(app.applied_at).toLocaleDateString('ja-JP')} 応募
                   </p>
                 </div>
                 {appBadge(app.status)}
@@ -174,7 +174,7 @@ export function EmployerJobDetailClient({ job: initialJob, applications: initial
                 <p className="text-xs text-gray-600 bg-gray-50 rounded-lg p-3 leading-relaxed">{app.message}</p>
               )}
 
-              {app.status === 'pending' && (
+              {app.status === 'applied' && (
                 <div className="flex gap-2 pt-1">
                   <Button
                     variant="secondary" size="sm" className="flex-1"
@@ -202,7 +202,7 @@ export function EmployerJobDetailClient({ job: initialJob, applications: initial
                 </Button>
               )}
               {reviewedIds.has(app.id) && (
-                <p className="text-xs text-center text-gray-400">評価済み</p>
+                <p className="text-xs text-center text-gray-400">評価済み ✓</p>
               )}
             </div>
           ))

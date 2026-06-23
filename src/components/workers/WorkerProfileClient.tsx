@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { useToast } from '@/components/toast/ToastProvider'
-import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 
 interface Props {
@@ -21,13 +20,12 @@ interface Props {
   avgRating: string | null
   completedCount: number
   employerOpenJobs: Array<{ id: string; title: string }>
-  viewerId: string
   workerId: string
 }
 
 export function WorkerProfileClient({
   profile, qualifications, reviews, avgRating, completedCount,
-  employerOpenJobs, viewerId, workerId
+  employerOpenJobs, workerId
 }: Props) {
   const [showInvite, setShowInvite] = useState(false)
   const [selectedJobId, setSelectedJobId] = useState('')
