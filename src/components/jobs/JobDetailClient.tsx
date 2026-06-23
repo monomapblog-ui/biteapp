@@ -58,19 +58,32 @@ export function JobDetailClient({ job, approvedQualIds, userId, existingApplicat
     if (!userId) return
     setLoading(true)
 
-    const { error } = await supabase.from('applications').insert({
+    const { data: appData, error } = await supabase.from('applications').insert({
       job_id: job.id,
       worker_id: userId,
       message: message || null,
-    } as never)
-
-    setLoading(false)
+    } as never).select('id').single()
 
     if (error) {
+      setLoading(false)
       alert('応募に失敗しました。資格の承認状況をご確認ください。')
       return
     }
 
+    // notify employer
+    const employerId = (job.profiles as unknown as { id?: string } | null)?.id
+    if (employerId) {
+      await supabase.from('notifications').insert({
+        user_id: employerId,
+        type: 'new_application',
+        title: '新しい応募が届きました',
+        body: `「${job.title}」に新しい応募がありました。`,
+        related_job_id: job.id,
+        related_application_id: (appData as { id: string } | null)?.id ?? null,
+      } as never)
+    }
+
+    setLoading(false)
     setApplied(true)
     setShowModal(false)
     router.refresh()

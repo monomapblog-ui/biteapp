@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
+import { NotificationBell } from '@/components/notifications/NotificationBell'
 
 function navItems(role: string | null) {
   if (role === 'employer') return [
@@ -53,6 +54,7 @@ export function Header({ role = null }: Props) {
                 {item.label}
               </Link>
             ))}
+            {role && <NotificationBell />}
           </nav>
         </div>
       </div>

@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useToast } from '@/components/toast/ToastProvider'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
+import { ReviewModal } from '@/components/reviews/ReviewModal'
 
 interface Application {
   id: string; worker_id: string; status: string; message: string | null
@@ -15,7 +16,7 @@ interface Application {
 interface Job {
   id: string; title: string; work_date: string; start_time: string; end_time: string
   hourly_rate: number; slots: number; status: string; prefecture: string
-  location: string; description: string
+  location: string; description: string; employer_id: string
 }
 
 interface Props { job: Job; applications: Application[] }
@@ -28,13 +29,18 @@ function appBadge(status: string) {
   return <Badge variant="default">{status}</Badge>
 }
 
-export function EmployerJobDetailClient({ job, applications: initialApps }: Props) {
+export function EmployerJobDetailClient({ job: initialJob, applications: initialApps }: Props) {
   const [apps, setApps] = useState(initialApps)
+  const [job, setJob] = useState(initialJob)
   const [loading, setLoading] = useState<string | null>(null)
+  const [reviewTarget, setReviewTarget] = useState<Application | null>(null)
+  const [reviewedIds, setReviewedIds] = useState<Set<string>>(new Set())
   const supabase = createClient()
   const toast = useToast()
 
-  async function updateStatus(appId: string, status: 'accepted' | 'rejected') {
+  const isJobPast = new Date(job.work_date) < new Date(new Date().toDateString())
+
+  async function updateAppStatus(appId: string, status: 'accepted' | 'rejected', workerId: string, workerName: string) {
     setLoading(appId)
     const { error } = await supabase
       .from('applications')
@@ -43,9 +49,35 @@ export function EmployerJobDetailClient({ job, applications: initialApps }: Prop
 
     if (error) {
       toast.error('更新に失敗しました')
+      setLoading(null)
+      return
+    }
+
+    setApps(prev => prev.map(a => a.id === appId ? { ...a, status } : a))
+
+    // notify worker
+    await supabase.from('notifications').insert({
+      user_id: workerId,
+      type: status === 'accepted' ? 'application_accepted' : 'application_rejected',
+      title: status === 'accepted' ? '採用されました！' : '応募結果のお知らせ',
+      body: status === 'accepted'
+        ? `「${job.title}」に採用されました。当日は時間通りにお越しください。`
+        : `「${job.title}」の応募は今回見送りとなりました。`,
+      related_job_id: job.id,
+    } as never)
+
+    toast.success(status === 'accepted' ? `${workerName}さんを採用しました` : '不採用にしました')
+    setLoading(null)
+  }
+
+  async function updateJobStatus(status: 'closed' | 'completed') {
+    setLoading('job-' + status)
+    const { error } = await supabase.from('jobs').update({ status } as never).eq('id', job.id)
+    if (error) {
+      toast.error('更新に失敗しました')
     } else {
-      setApps(prev => prev.map(a => a.id === appId ? { ...a, status } : a))
-      toast.success(status === 'accepted' ? '採用しました' : '不採用にしました')
+      setJob(prev => ({ ...prev, status }))
+      toast.success(status === 'closed' ? '募集を締め切りました' : '案件を完了にしました')
     }
     setLoading(null)
   }
@@ -61,7 +93,12 @@ export function EmployerJobDetailClient({ job, applications: initialApps }: Prop
 
       {/* Job Info */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-3">
-        <h1 className="font-bold text-gray-900 text-lg leading-snug">{job.title}</h1>
+        <div className="flex items-start justify-between gap-2">
+          <h1 className="font-bold text-gray-900 text-lg leading-snug flex-1">{job.title}</h1>
+          {job.status === 'open' && <Badge variant="success">募集中</Badge>}
+          {job.status === 'closed' && <Badge variant="default">締切</Badge>}
+          {job.status === 'completed' && <Badge variant="default">完了</Badge>}
+        </div>
         <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-500">
           <span>📅 {job.work_date}</span>
           <span>🕐 {job.start_time}〜{job.end_time}</span>
@@ -73,6 +110,37 @@ export function EmployerJobDetailClient({ job, applications: initialApps }: Prop
           <span className="font-semibold text-gray-900">{acceptedCount} / {job.slots} 名</span>
           {pendingCount > 0 && <Badge variant="warning">{pendingCount}件 未対応</Badge>}
         </div>
+
+        {/* Job lifecycle buttons */}
+        {job.status === 'open' && (
+          <div className="flex gap-2 pt-1">
+            <Button
+              variant="secondary" size="sm" className="flex-1"
+              onClick={() => updateJobStatus('closed')}
+              disabled={!!loading}
+            >
+              募集を締め切る
+            </Button>
+            {isJobPast && (
+              <Button
+                size="sm" className="flex-1"
+                onClick={() => updateJobStatus('completed')}
+                disabled={!!loading}
+              >
+                完了にする
+              </Button>
+            )}
+          </div>
+        )}
+        {job.status === 'closed' && isJobPast && (
+          <Button
+            size="sm" className="w-full"
+            onClick={() => updateJobStatus('completed')}
+            disabled={!!loading}
+          >
+            完了にする
+          </Button>
+        )}
       </div>
 
       {/* Applications */}
@@ -108,24 +176,51 @@ export function EmployerJobDetailClient({ job, applications: initialApps }: Prop
                 <div className="flex gap-2 pt-1">
                   <Button
                     variant="secondary" size="sm" className="flex-1"
-                    onClick={() => updateStatus(app.id, 'rejected')}
+                    onClick={() => updateAppStatus(app.id, 'rejected', app.worker_id, app.workerName)}
                     disabled={loading === app.id}
                   >
                     不採用
                   </Button>
                   <Button
                     size="sm" className="flex-1"
-                    onClick={() => updateStatus(app.id, 'accepted')}
+                    onClick={() => updateAppStatus(app.id, 'accepted', app.worker_id, app.workerName)}
                     disabled={loading === app.id}
                   >
                     {loading === app.id ? '処理中...' : '採用する'}
                   </Button>
                 </div>
               )}
+
+              {app.status === 'accepted' && isJobPast && !reviewedIds.has(app.id) && (
+                <Button
+                  variant="secondary" size="sm" className="w-full"
+                  onClick={() => setReviewTarget(app)}
+                >
+                  ⭐ {app.workerName}さんを評価する
+                </Button>
+              )}
+              {reviewedIds.has(app.id) && (
+                <p className="text-xs text-center text-gray-400">評価済み</p>
+              )}
             </div>
           ))
         )}
       </div>
+
+      {reviewTarget && (
+        <ReviewModal
+          applicationId={reviewTarget.id}
+          jobId={job.id}
+          revieweeId={reviewTarget.worker_id}
+          revieweeName={reviewTarget.workerName}
+          reviewerRole="employer"
+          onDone={() => {
+            setReviewedIds(prev => new Set([...prev, reviewTarget.id]))
+            setReviewTarget(null)
+          }}
+          onClose={() => setReviewTarget(null)}
+        />
+      )}
     </div>
   )
 }
